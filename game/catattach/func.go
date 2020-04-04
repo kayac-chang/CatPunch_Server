@@ -1,7 +1,7 @@
 package catattach
 
 import (
-	"github.com/YWJSonic/GameServer/catpunch/game/cache"
+	"gitlab.fbk168.com/gamedevjp/cat/server/game/cache"
 	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/attach"
 )
 

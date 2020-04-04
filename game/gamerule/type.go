@@ -99,10 +99,8 @@ func (r *Rule) GameRequest(config *igame.RuleRequest) *igame.RuleRespond {
 		catAttach.FreeCount %= int64(r.FreeGameTrigger)
 		catAttach = r.newAttach()
 	}
-	if catAttach.IsLockBet != 0 {
+	if catAttach.IsLockBet > 0 {
 		config.BetIndex = catAttach.LockBetIndex
-	} else {
-		catAttach.LockBetIndex = config.BetIndex
 	}
 
 	betMoney := r.GetBetMoney(config.BetIndex)
@@ -111,7 +109,11 @@ func (r *Rule) GameRequest(config *igame.RuleRequest) *igame.RuleRespond {
 	result["normalresult"] = gameResult.Normalresult
 	result["isrespin"] = 0
 	totalWin += gameResult.Normaltotalwin
-	catAttach.FreeCount++ //gameResult.Otherdata["freecount"].(int64)
+	catAttach.FreeCount = gameResult.Otherdata["freecount"].(int64)
+	if catAttach.FreeCount > 0 {
+		catAttach.LockBetIndex = config.BetIndex
+		catAttach.IsLockBet = 1
+	}
 
 	if gameResult.Respinresult != nil {
 		result["respin"] = gameResult.Respinresult
@@ -137,6 +139,9 @@ func (r *Rule) GetAttach(att attach.IAttach) CatAttach {
 	info.FreeCount = count.GetIValue()
 	lockindex := att.Get(int64(r.GameIndex), 1)
 	info.LockBetIndex = lockindex.GetIValue()
+	if info.FreeCount > 0 {
+		info.IsLockBet = 1
+	}
 	return info
 }
 func (r *Rule) outPutAttach(catAtt CatAttach) []*attach.Info {
@@ -144,7 +149,7 @@ func (r *Rule) outPutAttach(catAtt CatAttach) []*attach.Info {
 	freeCountAtt := attach.NewInfo(int64(r.GameIndex), 0, false)
 	freeCountAtt.SetIValue(catAtt.FreeCount)
 	lockAtt := attach.NewInfo(int64(r.GameIndex), 1, false)
-	lockAtt.SetIValue(catAtt.FreeCount)
+	lockAtt.SetIValue(catAtt.LockBetIndex)
 
 	resAtt = append(resAtt, freeCountAtt)
 	resAtt = append(resAtt, lockAtt)
@@ -155,6 +160,6 @@ func (r *Rule) newAttach() CatAttach {
 	return CatAttach{
 		FreeCount:    0,
 		IsLockBet:    0,
-		LockBetIndex: 1,
+		LockBetIndex: 0,
 	}
 }

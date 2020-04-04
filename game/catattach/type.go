@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/YWJSonic/GameServer/catpunch/game/cache"
+	"gitlab.fbk168.com/gamedevjp/cat/server/game/cache"
 	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/attach"
 	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/foundation"
 )

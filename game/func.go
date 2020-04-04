@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/YWJSonic/GameServer/catpunch/game/cache"
-	"github.com/YWJSonic/GameServer/catpunch/game/gamerule"
+	"gitlab.fbk168.com/gamedevjp/cat/server/game/cache"
+	"gitlab.fbk168.com/gamedevjp/cat/server/game/gamerule"
 	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/foundation"
 	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/foundation/fileload"
 	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/iserver"

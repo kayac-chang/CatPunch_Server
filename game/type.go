@@ -3,8 +3,8 @@ package game
 import (
 	"errors"
 
-	"github.com/YWJSonic/GameServer/catpunch/game/cache"
-	"github.com/YWJSonic/GameServer/catpunch/game/catattach"
+	"gitlab.fbk168.com/gamedevjp/cat/server/game/cache"
+	"gitlab.fbk168.com/gamedevjp/cat/server/game/catattach"
 	"github.com/golang/protobuf/ptypes"
 	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/igame"
 	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/iserver"
