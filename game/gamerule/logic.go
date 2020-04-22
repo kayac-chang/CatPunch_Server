@@ -3,56 +3,51 @@ package gamerule
 import (
 	"fmt"
 
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/foundation"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/gamesystem"
+	"github.com/YWJSonic/ServerUtility/foundation"
+	"github.com/YWJSonic/ServerUtility/gamesystem"
 )
 
 type result struct {
-	Normalresult   map[string]interface{}
-	Otherdata      map[string]interface{}
-	Normaltotalwin int64
-	Respinresult   []interface{}
-	Respintotalwin int64
+	NormalResult     map[string]interface{}
+	Otherdata        map[string]interface{}
+	NormalTotalwin   int64
+	RespinResult     map[string]interface{}
+	RespinTotalwin   int64
+	FreeGameResult   []interface{}
+	FreeGameTotalwin int64
 }
 
 // Result att 0: freecount
 func (r *Rule) newlogicResult(betMoney int64, att CatAttach) result {
 	var totalWin int64
+	var res result
 
 	normalresult, otherdata, normaltotalwin := r.outputGame(betMoney, att.FreeCount)
-	// result = foundation.AppendMap(result, otherdata)
-	// result["normalresult"] = normalresult
-	// result["islockbet"] = 0
-	totalWin += normaltotalwin
 	fmt.Println("----normalresult----", normalresult)
 	fmt.Println("----otherdata----", otherdata)
 	fmt.Println("----normaltotalwin----", normaltotalwin)
 
 	if otherdata["isrespin"].(int) == 1 {
 		respinresult, respintotalwin := r.outRespin(totalWin)
-		totalWin = respintotalwin
-		// result["respin"] = respinresult
-		// result["isrespin"] = 1
+		res.RespinResult = respinresult
+		res.RespinTotalwin = respintotalwin
 		fmt.Println("----respinresult----", respinresult)
 		fmt.Println("----respintotalwin----", respintotalwin)
 	}
 
 	if otherdata["isfreegame"].(int) == 1 {
 		freeresult, freetotalwin := r.outputFreeSpin(betMoney)
-		totalWin += freetotalwin
-		// result["freegame"] = freeresult
-		// result["isfreegame"] = 1
+		res.FreeGameResult = freeresult
+		res.FreeGameTotalwin = freetotalwin
 		fmt.Println("----freeresult----", freeresult)
 		fmt.Println("----freetotalwin----", freetotalwin)
 	}
 
 	// result["totalwinscore"] = totalWin
-	return result{
-		Normalresult:   normalresult,
-		Otherdata:      otherdata,
-		Normaltotalwin: normaltotalwin,
-	}
-
+	res.NormalResult = normalresult
+	res.Otherdata = otherdata
+	res.NormalTotalwin = normaltotalwin
+	return res
 }
 
 func (r *Rule) outputGame(betMoney int64, freecount int64) (map[string]interface{}, map[string]interface{}, int64) {

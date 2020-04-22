@@ -1,11 +1,8 @@
 package cache
 
-func NewCacheSetting() Setting {
-	return Setting{}
-}
-
-func NewGameCache() *GameCache {
-	return &GameCache{
-		cacheMap: make(map[string]interface{}),
+func NewCache(setting Setting) *GameCache {
+	cache := &GameCache{
+		Setting: setting,
 	}
+	return cache
 }

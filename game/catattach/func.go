@@ -1,16 +1,17 @@
 package catattach
 
 import (
-	"gitlab.fbk168.com/gamedevjp/cat/server/game/cache"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/attach"
+	"github.com/YWJSonic/ServerUtility/attach"
 )
 
-// NewUserAttach ...
-func NewUserAttach(cache *cache.GameCache, userID int64) *UserAttach {
+// NewAttach ...
+func NewAttach(attSetting Setting) attach.IAttach {
 	attach := &UserAttach{
-		cache:   cache,
-		userID:  userID,
-		dataMap: make(map[int64]map[int64]*attach.Info),
+		userIDStr: attSetting.UserIDStr,
+		kind:      attSetting.Kind,
+		db:        attSetting.DB,
+		dataMap:   make(map[int64]map[int64]*attach.Info),
+		redis:     attSetting.Redis,
 	}
 	// attach.InitData(userID)
 	return attach

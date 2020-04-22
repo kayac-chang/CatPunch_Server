@@ -2,25 +2,40 @@ package game
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
+	"github.com/YWJSonic/ServerUtility/igame"
+	"github.com/YWJSonic/ServerUtility/iserver"
+	_ "github.com/YWJSonic/ServerUtility/mysql"
+	"github.com/YWJSonic/ServerUtility/playerinfo"
+	"github.com/YWJSonic/ServerUtility/restfult"
+	"github.com/YWJSonic/ServerUtility/socket"
+	"github.com/YWJSonic/ServerUtility/user"
+	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"gitlab.fbk168.com/gamedevjp/cat/server/game/cache"
 	"gitlab.fbk168.com/gamedevjp/cat/server/game/catattach"
-	"github.com/golang/protobuf/ptypes"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/igame"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/iserver"
-	_ "gitlab.fbk168.com/gamedevjp/backend-utility/utility/mysql"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/playerinfo"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/restfult"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/socket"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/thirdparty/transaction/protoc"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/user"
+	"gitlab.fbk168.com/gamedevjp/cat/server/game/protoc"
 )
+
+var version string = "v1"
+
+// AuthUserURL ...
+const AuthUserURL string = "%s/%s/users/%s"
+
+// NewOrderURL ...
+const NewOrderURL string = "%s/%s/orders"
+
+// GetOrderURL ...
+const GetOrderURL string = "%s/%s/orders/%s"
 
 // Game ...
 type Game struct {
 	Server    *iserver.Service
-	IGameRule igame.ISlotRule
 	Cache     *cache.GameCache
+	IGameRule igame.ISlotRule
+
 	// ProtocolMap map[string]func(r *http.Request) protocol.IProtocol
 }
 
@@ -52,11 +67,6 @@ func (g *Game) SocketURLs() []socket.Setting {
 	}
 }
 
-// NewUser *Not Use
-func (g *Game) NewUser(token, gameAccount string) *user.Info {
-	return &user.Info{}
-}
-
 // GetUser ...
 func (g *Game) GetUser(userToken string) (*user.Info, *protoc.Error, error) {
 	if g.Server.Setting.ServerMod == "dev" {
@@ -64,29 +74,51 @@ func (g *Game) GetUser(userToken string) (*user.Info, *protoc.Error, error) {
 			UserServerInfo: &playerinfo.AccountInfo{},
 			UserGameInfo: &playerinfo.Info{
 				IDStr:  "devtest",
-				Money:  10000000,
 				MoneyU: 10000000,
 			},
-			IAttach: catattach.NewUserAttach(g.Cache, 0),
+			IAttach: catattach.NewAttach(catattach.Setting{
+				UserIDStr: "devtest",
+				Kind:      g.IGameRule.GetGameIndex(),
+				DB:        g.Server.DBConn("gamedb"),
+				Redis:     g.Cache,
+			}),
 		}, nil, nil
 	}
 
-	userProto, errorProto, err := g.Server.Transfer.AuthUser(userToken)
+	tokens := strings.Split(userToken, " ")
+	if len(tokens) < 2 {
+		return nil, nil, errors.New("token error")
+	}
+
+	res, err := g.Server.Transfer.AuthUser(fmt.Sprintf(AuthUserURL, g.Server.Transfer.Path, version, tokens[1]))
 	if err != nil {
-		if errorProto != nil {
+		if res != nil {
+			errorProto := &protoc.Error{}
+			if jserr := errorProto.XXX_Unmarshal(res); jserr != nil {
+				return nil, nil, jserr
+			}
 			return nil, errorProto, err
 		}
 		return nil, nil, err
+	}
+
+	userProto := &protoc.User{}
+	if jserr := userProto.XXX_Unmarshal(res); jserr != nil {
+		return nil, nil, jserr
 	}
 
 	return &user.Info{
 		UserServerInfo: &playerinfo.AccountInfo{},
 		UserGameInfo: &playerinfo.Info{
 			IDStr:  userProto.GetUserId(),
-			Money:  int64(userProto.GetBalance()),
 			MoneyU: userProto.GetBalance(),
 		},
-		IAttach: catattach.NewUserAttach(g.Cache, 0),
+		IAttach: catattach.NewAttach(catattach.Setting{
+			UserIDStr: userProto.GetUserId(),
+			Kind:      7,
+			DB:        g.Server.DBConn("gamedb"),
+			Redis:     g.Cache,
+		}),
 	}, nil, nil
 }
 
@@ -100,16 +132,31 @@ func (g *Game) NewOrder(token, userIDStr string, betMoney int64) (*protoc.Order,
 			OrderId: "testOrder",
 		}, nil, nil
 	}
-	orderProto, errorProto, err := g.Server.Transfer.NewOrder(token, &protoc.Order{
+
+	orderProto := &protoc.Order{
 		UserId: userIDStr,
 		GameId: g.IGameRule.GetGameTypeID(),
 		Bet:    uint64(betMoney),
-	})
+	}
+	payload, err := proto.Marshal(orderProto)
 	if err != nil {
-		if errorProto != nil {
+		return nil, nil, err
+	}
+
+	res, err := g.Server.Transfer.NewOrder(fmt.Sprintf(NewOrderURL, g.Server.Transfer.Path, version), token, payload)
+	if err != nil {
+		if res != nil {
+			errorProto := &protoc.Error{}
+			if jserr := errorProto.XXX_Unmarshal(res); jserr != nil {
+				return nil, nil, jserr
+			}
 			return nil, errorProto, err
 		}
 		return nil, nil, err
+	}
+
+	if jserr := orderProto.XXX_Unmarshal(res); jserr != nil {
+		return nil, nil, jserr
 	}
 	return orderProto, nil, nil
 
@@ -121,7 +168,28 @@ func (g *Game) EndOrder(token string, orderProto *protoc.Order) (*protoc.Order, 
 	if g.Server.Setting.ServerMod == "dev" {
 		return orderProto, nil, nil
 	}
-	return g.Server.Transfer.EndOrder(token, orderProto)
+
+	payload, err := proto.Marshal(orderProto)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	res, err := g.Server.Transfer.EndOrder(fmt.Sprintf(GetOrderURL, g.Server.Transfer.Path, version, orderProto.GetOrderId()), token, payload)
+	if err != nil {
+		if res != nil {
+			errorProto := &protoc.Error{}
+			if jserr := errorProto.XXX_Unmarshal(res); jserr != nil {
+				return nil, nil, jserr
+			}
+			return nil, errorProto, err
+		}
+		return nil, nil, err
+	}
+
+	if jserr := orderProto.XXX_Unmarshal(res); jserr != nil {
+		return nil, nil, jserr
+	}
+	return orderProto, nil, nil
 }
 
 // GetUserByGameID ...

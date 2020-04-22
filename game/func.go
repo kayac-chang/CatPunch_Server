@@ -2,37 +2,40 @@ package game
 
 import (
 	"encoding/json"
-	"errors"
 
+	"github.com/YWJSonic/ServerUtility/foundation"
+	"github.com/YWJSonic/ServerUtility/foundation/fileload"
+	"github.com/YWJSonic/ServerUtility/iserver"
+	"github.com/YWJSonic/ServerUtility/restfult"
+	"github.com/YWJSonic/ServerUtility/socket"
 	"gitlab.fbk168.com/gamedevjp/cat/server/game/cache"
 	"gitlab.fbk168.com/gamedevjp/cat/server/game/gamerule"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/foundation"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/foundation/fileload"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/iserver"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/restfult"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/socket"
 )
 
 // NewGameServer ...
-func NewGameServer() {
+func NewGameServer(jsStr string) {
 
-	jsStr := fileload.Load("./file/config.json")
 	config := foundation.StringToJSON(jsStr)
 	baseSetting := iserver.NewSetting()
 	baseSetting.SetData(config)
 
 	gamejsStr := fileload.Load("./file/gameconfig.json")
-	var gameRule = &gamerule.Rule{}
+	var gameRule = &gamerule.Rule{
+		GameTypeID: config["GameTypeID"].(string),
+	}
 	if err := json.Unmarshal([]byte(gamejsStr), &gameRule); err != nil {
-		panic(errors.New("gameconfig error: "))
+		panic(err)
+	}
+
+	cacheRedis := cache.Setting{
+		URL: baseSetting.RedisURL,
 	}
 
 	var gameserver = iserver.NewService()
 	var game = &Game{
 		IGameRule: gameRule,
 		Server:    gameserver,
-		Cache:     cache.NewGameCache(),
-		// ProtocolMap: protocol.NewProtocolMap(),
+		Cache:     cache.NewCache(cacheRedis),
 	}
 	gameserver.Restfult = restfult.NewRestfultService()
 	gameserver.Socket = socket.NewSocket()
@@ -48,7 +51,7 @@ func NewGameServer() {
 
 	// start restful service
 	go gameserver.LaunchRestfult(game.RESTfulURLs())
-	go gameserver.LaunchSocket(game.SocketURLs())
+	// go gameserver.LaunchSocket(game.SocketURLs())
 
 	<-gameserver.ShotDown
 }

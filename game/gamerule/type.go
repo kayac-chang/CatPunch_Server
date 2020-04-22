@@ -1,8 +1,10 @@
 package gamerule
 
 import (
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/attach"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/igame"
+	"fmt"
+
+	"github.com/YWJSonic/ServerUtility/attach"
+	"github.com/YWJSonic/ServerUtility/igame"
 )
 
 // CatAttach ...
@@ -20,7 +22,7 @@ type Rule struct {
 	FreeGameTrigger     int64   `json:"FreeGameTrigger"`
 	FreeGameWinRate     []int   `json:"FreeGameWinRate"`
 	FreeReel            [][]int `json:"FreeReel"`
-	GameIndex           int     `json:"GameIndex"`
+	GameIndex           int64   `json:"GameIndex"`
 	GameTypeID          string  `json:"GameTypeID"`
 	ItemResults         [][]int `json:"ItemResults"`
 	Items               []int   `json:"Items"`
@@ -33,6 +35,11 @@ type Rule struct {
 	Wild                []int   `json:"Wild"`
 	WinBetRateLimit     int64   `json:"WinBetRateLimit"`
 	WinScoreLimit       int64   `json:"WinScoreLimit"`
+}
+
+// GetGameIndex ...
+func (r *Rule) GetGameIndex() int64 {
+	return r.GameIndex
 }
 
 // GetGameTypeID ...
@@ -95,6 +102,8 @@ func (r *Rule) GameRequest(config *igame.RuleRequest) *igame.RuleRespond {
 	var totalWin int64
 
 	catAttach := r.GetAttach(*config.Attach)
+	oldcount := catAttach.FreeCount
+	fmt.Println("catAttach", catAttach)
 	if catAttach.FreeCount >= int64(r.FreeGameTrigger) {
 		catAttach.FreeCount %= int64(r.FreeGameTrigger)
 		catAttach = r.newAttach()
@@ -106,22 +115,41 @@ func (r *Rule) GameRequest(config *igame.RuleRequest) *igame.RuleRespond {
 	betMoney := r.GetBetMoney(config.BetIndex)
 	gameResult := r.newlogicResult(betMoney, catAttach)
 
-	result["normalresult"] = gameResult.Normalresult
-	result["isrespin"] = 0
-	totalWin += gameResult.Normaltotalwin
+	result["normalresult"] = gameResult.NormalResult
+	otherData["isrespin"] = 0
+	otherData["isfreegame"] = 0
+	totalWin += gameResult.NormalTotalwin
 	catAttach.FreeCount = gameResult.Otherdata["freecount"].(int64)
 	if catAttach.FreeCount > 0 {
 		catAttach.LockBetIndex = config.BetIndex
 		catAttach.IsLockBet = 1
+	} else {
+		catAttach.LockBetIndex = 0
+		catAttach.IsLockBet = 0
 	}
 
-	if gameResult.Respinresult != nil {
-		result["respin"] = gameResult.Respinresult
-		result["isrespin"] = 1
-		totalWin += gameResult.Respintotalwin
+	if gameResult.Otherdata["isrespin"].(int) >= 1 {
+		result["respin"] = gameResult.RespinResult
+		otherData["isrespin"] = 1
+		totalWin += gameResult.RespinTotalwin
+	}
+
+	if gameResult.Otherdata["isfreegame"].(int) >= 1 {
+		result["freegame"] = gameResult.FreeGameResult
+		otherData["isfreegame"] = 1
+		totalWin += gameResult.FreeGameTotalwin
 	}
 
 	result["totalwinscore"] = totalWin
+	otherData["freecount"] = catAttach.FreeCount
+	otherData["islockbet"] = catAttach.IsLockBet
+	if catAttach.IsLockBet >= 1 {
+		otherData["lockbetindex"] = config.BetIndex
+	}
+
+	if oldcount > catAttach.FreeCount {
+		fmt.Println("catAttach", catAttach)
+	}
 
 	return &igame.RuleRespond{
 		Attach:        r.outPutAttach(catAttach),

@@ -1,13 +1,13 @@
-package protocol
+package protoc
 
 import (
 	"net/http"
 
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/foundation"
-	"gitlab.fbk168.com/gamedevjp/backend-utility/utility/myhttp"
+	"github.com/YWJSonic/ServerUtility/foundation"
+	"github.com/YWJSonic/ServerUtility/myhttp"
 )
 
-// Request ...
+// GameRequest ...
 type GameRequest struct {
 	Token      string
 	BetIndex   int64
@@ -17,11 +17,10 @@ type GameRequest struct {
 
 // InitData ...
 func (c *GameRequest) InitData(r *http.Request) {
-	c.Token = r.Header.Get("Authorization")
 	postData := myhttp.PostData(r)
+	c.Token = r.Header.Get("Authorization")
 	c.BetIndex = foundation.InterfaceToInt64(postData["bet"])
 	c.GameTypeID = foundation.InterfaceToString(postData["gametypeid"])
-	c.PlayerID = foundation.InterfaceToInt64(postData["playerid"])
 }
 
 // // Respon ...
