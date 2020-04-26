@@ -1,8 +1,6 @@
 package gamerule
 
 import (
-	"fmt"
-
 	"github.com/YWJSonic/ServerUtility/foundation"
 	"github.com/YWJSonic/ServerUtility/gamesystem"
 )
@@ -23,24 +21,24 @@ func (r *Rule) newlogicResult(betMoney int64, att CatAttach) result {
 	var res result
 
 	normalresult, otherdata, normaltotalwin := r.outputGame(betMoney, att.FreeCount)
-	fmt.Println("----normalresult----", normalresult)
-	fmt.Println("----otherdata----", otherdata)
-	fmt.Println("----normaltotalwin----", normaltotalwin)
+	// fmt.Println("----normalresult----", normalresult)
+	// fmt.Println("----otherdata----", otherdata)
+	// fmt.Println("----normaltotalwin----", normaltotalwin)
 
 	if otherdata["isrespin"].(int) == 1 {
 		respinresult, respintotalwin := r.outRespin(totalWin)
 		res.RespinResult = respinresult
 		res.RespinTotalwin = respintotalwin
-		fmt.Println("----respinresult----", respinresult)
-		fmt.Println("----respintotalwin----", respintotalwin)
+		// fmt.Println("----respinresult----", respinresult)
+		// fmt.Println("----respintotalwin----", respintotalwin)
 	}
 
 	if otherdata["isfreegame"].(int) == 1 {
 		freeresult, freetotalwin := r.outputFreeSpin(betMoney)
 		res.FreeGameResult = freeresult
 		res.FreeGameTotalwin = freetotalwin
-		fmt.Println("----freeresult----", freeresult)
-		fmt.Println("----freetotalwin----", freetotalwin)
+		// fmt.Println("----freeresult----", freeresult)
+		// fmt.Println("----freetotalwin----", freetotalwin)
 	}
 
 	// result["totalwinscore"] = totalWin

@@ -103,7 +103,6 @@ func (g *Game) GetUser(userToken string) (*user.Info, *protoc.Error, error) {
 	}
 
 	userProto := &protoc.User{}
-	fmt.Println(string(res))
 	if jserr := proto.Unmarshal(res, userProto); jserr != nil {
 		return nil, nil, jserr
 	}

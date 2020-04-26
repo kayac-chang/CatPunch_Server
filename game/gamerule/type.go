@@ -103,7 +103,6 @@ func (r *Rule) GameRequest(config *igame.RuleRequest) *igame.RuleRespond {
 
 	catAttach := r.GetAttach(*config.Attach)
 	oldcount := catAttach.FreeCount
-	fmt.Println("catAttach", catAttach)
 	if catAttach.FreeCount >= int64(r.FreeGameTrigger) {
 		catAttach.FreeCount %= int64(r.FreeGameTrigger)
 		catAttach = r.newAttach()
