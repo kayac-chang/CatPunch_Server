@@ -33,7 +33,7 @@ func (g *Game) createNewSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	g.Server.Socket.AddNewConn("f", c, func(msg socket.Message) error {
-		fmt.Println("#-- socket --#", msg)
+		// fmt.Println("#-- socket --#", msg)
 		return nil
 	})
 	// g.Server.Socket.AddNewConn(user.GetGameInfo().GameAccount, c, g.SocketMessageHandle)
@@ -44,7 +44,7 @@ func (g *Game) createNewSocket(w http.ResponseWriter, r *http.Request) {
 
 // SocketMessageHandle ...
 func (g *Game) SocketMessageHandle(msg socket.Message) error {
-	fmt.Println("#-- socket --#", msg)
+	// fmt.Println("#-- socket --#", msg)
 	return nil
 }
 
@@ -52,7 +52,6 @@ func (g *Game) gameinit(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	var result = make(map[string]interface{})
 	var proto protoc.InitRequest
 	proto.InitData(r)
-	st := time.Now()
 	// get user
 	user, _, err := g.GetUser(proto.Token)
 	if err != nil {
@@ -62,7 +61,6 @@ func (g *Game) gameinit(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	fmt.Println("1 Time:", time.Since(st))
 	result["player"] = map[string]interface{}{
 		"gameaccount": g.IGameRule.GetGameTypeID(),
 		"id":          user.UserGameInfo.IDStr,
@@ -70,12 +68,10 @@ func (g *Game) gameinit(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	}
 	result["reel"] = g.IGameRule.GetReel()
 	result["betrate"] = g.IGameRule.GetBetSetting()
-	fmt.Println("2 Time:", time.Since(st))
 
 	user.IAttach.SetValue(g.IGameRule.GetGameIndex(), 0, "", 0)
 	user.IAttach.SetValue(g.IGameRule.GetGameIndex(), 1, "", -1)
 	user.IAttach.Save()
-	fmt.Println("3 Time:", time.Since(st))
 	g.Server.HTTPResponse(w, result, messagehandle.New())
 }
 
@@ -83,7 +79,6 @@ func (g *Game) gameresult(w http.ResponseWriter, r *http.Request, ps httprouter.
 	var proto protoc.GameRequest
 	var oldMoney int64
 	proto.InitData(r)
-	st := time.Now()
 
 	if proto.GameTypeID != g.IGameRule.GetGameTypeID() {
 		errMsg := messagehandle.New()
@@ -133,11 +128,9 @@ func (g *Game) gameresult(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	fmt.Println("1 Time:", time.Since(st))
 	// get attach
 	user.LoadAttach()
 
-	fmt.Println("2 Time:", time.Since(st))
 	oldMoney = user.UserGameInfo.GetMoney()
 	// get game result
 	RuleRequest := &igame.RuleRequest{
@@ -150,11 +143,9 @@ func (g *Game) gameresult(w http.ResponseWriter, r *http.Request, ps httprouter.
 		user.IAttach.SetAttach(att)
 	}
 
-	fmt.Println("3 Time:", time.Since(st))
 	user.IAttach.Save()
 	user.UserGameInfo.SumMoney(result.Totalwinscore - result.BetMoney)
 
-	fmt.Println("4 Time:", time.Since(st))
 	resultMap := make(map[string]interface{})
 	resultMap["totalwinscore"] = result.Totalwinscore
 	resultMap["playermoney"] = user.UserGameInfo.GetMoney()
