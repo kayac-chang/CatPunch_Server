@@ -165,6 +165,7 @@ func (g *Game) NewOrder(token, userIDStr string, betMoney int64) (*protoc.Order,
 // EndOrder ...
 func (g *Game) EndOrder(token string, orderProto *protoc.Order) (*protoc.Order, *protoc.Error, error) {
 	orderProto.CompletedAt = ptypes.TimestampNow()
+	orderProto.State = protoc.Order_Completed
 	if g.Server.Setting.ServerMod == "dev" {
 		return orderProto, nil, nil
 	}
