@@ -145,6 +145,7 @@ func (g *Game) gameresult(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	user.IAttach.Save()
 	user.UserGameInfo.SumMoney(result.Totalwinscore - result.BetMoney)
+	order.Win = uint64(result.Totalwinscore)
 
 	resultMap := make(map[string]interface{})
 	resultMap["totalwinscore"] = result.Totalwinscore
