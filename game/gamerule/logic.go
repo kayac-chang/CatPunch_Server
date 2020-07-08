@@ -17,7 +17,6 @@ type result struct {
 
 // Result att 0: freecount
 func (r *Rule) newlogicResult(betMoney int64, att CatAttach) result {
-	var totalWin int64
 	var res result
 
 	normalresult, otherdata, normaltotalwin := r.outputGame(betMoney, att.FreeCount)
@@ -26,7 +25,7 @@ func (r *Rule) newlogicResult(betMoney int64, att CatAttach) result {
 	// fmt.Println("----normaltotalwin----", normaltotalwin)
 
 	if otherdata["isrespin"].(int) == 1 {
-		respinresult, respintotalwin := r.outRespin(totalWin)
+		respinresult, respintotalwin := r.outRespin(normaltotalwin)
 		res.RespinResult = respinresult
 		res.RespinTotalwin = respintotalwin
 		// fmt.Println("----respinresult----", respinresult)
