@@ -57,6 +57,7 @@ func (r *Rule) GetReel() map[string][][]int {
 	scrollmap := map[string][][]int{
 		"normalreel": r.normalReel(),
 		"respinreel": {r.respuinScroll()},
+		"freereel":   r.freeReel(),
 	}
 	return scrollmap
 }
@@ -93,6 +94,10 @@ func (r *Rule) wild2() int {
 // RespuinScroll ...
 func (r *Rule) respuinScroll() []int {
 	return r.RespinReel[r.RTPSetting]
+}
+
+func (r *Rule) freeReel() [][]int {
+	return r.FreeReel
 }
 
 // GameRequest ...
